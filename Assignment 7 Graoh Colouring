@@ -1,0 +1,53 @@
+# Graph Coloring Example – University Timetable Scheduling
+
+# Step 1 : Input data
+courses = ["C1", "C2", "C3", "C4"]
+
+students = {
+    "S1": ["C1","C2"],
+    "S2": ["C2","C3"],
+    "S3": ["C1","C3"],
+    "S4": ["C4"]
+}
+
+rooms = {"R1":100,"R2":80,"R3":50}
+students_in_course = {"C1":90,"C2":70,"C3":50,"C4":60}
+
+# Step 2 : Build conflict graph
+graph = {c: set() for c in courses}
+for s,clist in students.items():
+    for i in range(len(clist)):
+        for j in range(i+1,len(clist)):
+            c1,c2 = clist[i],clist[j]
+            graph[c1].add(c2)
+            graph[c2].add(c1)
+
+# Step 3 : Greedy coloring
+color = {}
+for course in sorted(graph,key=lambda x:len(graph[x]), reverse=True):
+    used = {color[n] for n in graph[course] if n in color}
+    slot = 0
+    while slot in used: slot +=1
+    color[course] = slot
+
+# Step 4 : Room allocation
+# sort courses inside each slot by biggest strength
+slot_map = {}
+for c,slot in color.items():
+    slot_map.setdefault(slot,[]).append(c)
+
+room_assign = {}
+for slot,c_list in slot_map.items():
+    c_list.sort(key=lambda c:students_in_course[c],reverse=True)
+    free_rooms = sorted(rooms.items(), key=lambda x:x[1], reverse=True)
+    for c in c_list:
+        for r,cap in free_rooms:
+            if cap >= students_in_course[c] and r not in room_assign.values():
+                room_assign[c]=r
+                break
+
+# Step 5 : print final timetable
+print("Course  | Time Slot | Room")
+for c in courses:
+    print("{:<7}| {:<9}| {}".format(c,color[c],room_assign[c]))
+
